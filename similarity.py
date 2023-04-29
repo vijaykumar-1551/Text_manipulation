@@ -1,35 +1,29 @@
 import streamlit as st
-from transformers import AutoTokenizer, AutoModel
-import torch
+from sentence_transformers import SentenceTransformer, util
 
-tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-model = AutoModel.from_pretrained("bert-base-uncased")
+model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 
-st.title("Paragraph Similarity Checker")
+st.title("Answer Evaluation")
 
 # Define the user input fields for the two paragraphs
-paragraph1 = st.text_input("Enter the first paragraph:")
-paragraph2 = st.text_input("Enter the second paragraph:")
+paragraph1 = st.text_input("Enter the Actual answer:", value="")
+paragraph2 = st.text_input("Enter the Candidate's answer:", value="")
 
 # Add a submit button
-if st.button("Check Similarity"):
+if st.button("Check"):
     if paragraph1 and paragraph2:
-        # Tokenize the paragraphs and convert to PyTorch tensors
-        inputs1 = tokenizer(paragraph1, padding=True, truncation=True, return_tensors="pt")
-        inputs2 = tokenizer(paragraph2, padding=True, truncation=True, return_tensors="pt")
+        # Compute the embeddings for the two paragraphs
+        embeddings1 = model.encode(paragraph1, convert_to_tensor=True)
+        embeddings2 = model.encode(paragraph2, convert_to_tensor=True)
 
-        # Get the model output for each paragraph
-        outputs1 = model(**inputs1)
-        outputs2 = model(**inputs2)
-
-        # Calculate the cosine similarity between the two output embeddings
-        cos_sim = torch.nn.functional.cosine_similarity(outputs1.last_hidden_state.mean(dim=1), outputs2.last_hidden_state.mean(dim=1))
+        # Calculate the cosine similarity between the two embeddings
+        cos_sim = util.pytorch_cos_sim(embeddings1, embeddings2)
 
         # Define a threshold for similarity
         threshold = 0.8
 
         # Determine whether the paragraphs are similar or not
         if cos_sim.item() > threshold:
-            st.write("The two paragraphs are similar by:" , cos_sim.item()*100)
+            st.write("Correct --> similar by", cos_sim.item() * 100)
         else:
-            st.write("The two paragraphs are not similar." , cos_sim.item()*100)
+            st.write("Wrong --> similar by", 100 - (cos_sim.item() * 100))
