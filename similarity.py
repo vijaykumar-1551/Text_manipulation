@@ -30,6 +30,6 @@ if st.button("Check Similarity"):
 
         # Determine whether the paragraphs are similar or not
         if cos_sim.item() > threshold:
-            st.write("The two paragraphs are similar.")
+            st.write("The two paragraphs are similar by:" , cos_sim.item()*100)
         else:
-            st.write("The two paragraphs are not similar.")
+            st.write("The two paragraphs are not similar." , cos_sim.item()*100)

@@ -7,7 +7,7 @@ from transformers import TFAutoModelForSeq2SeqLM
 import torch
 
 # Function to scrape Wikipedia article and summarize text
-@st.cache(suppress_st_warning=True, allow_output_mutation=True)
+@st.cache_data(suppress_st_warning=True, allow_output_mutation=True)
 def scrapeWikiArticle(url):
     response = requests.get(url=url)
     soup = BeautifulSoup(response.content, 'html.parser')
