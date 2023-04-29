@@ -26,4 +26,4 @@ if st.button("Check"):
         if cos_sim.item() > threshold:
             st.write("Correct --> similar by", cos_sim.item() * 100)
         else:
-            st.write("Wrong --> similar by", 100 - (cos_sim.item() * 100))
+            st.write("Wrong --> similar by", cos_sim.item() * 100)
