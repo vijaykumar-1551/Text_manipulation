@@ -3,11 +3,11 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from transformers import pipeline 
-from transformers import TFAutoModelForSeq2SeqLM
+from transformers import AutoModelForSeq2SeqLM
 import torch
 
 # Function to scrape Wikipedia article and summarize text
-@st.cache_data(suppress_st_warning=True, allow_output_mutation=True)
+@st.cache(suppress_st_warning=True)
 def scrapeWikiArticle(url):
     response = requests.get(url=url)
     soup = BeautifulSoup(response.content, 'html.parser')
@@ -26,20 +26,17 @@ def scrapeWikiArticle(url):
     # Summarize text
     def summarizeText(text):
         model_name = "sshleifer/distilbart-cnn-12-6"
-        summarizer = pipeline("summarization", model = TFAutoModelForSeq2SeqLM.from_pretrained(model_name, from_pt = True), tokenizer="sshleifer/distilbart-cnn-12-6")
-        max_chunk_len = 1024
+        summarizer = pipeline("summarization", model = AutoModelForSeq2SeqLM.from_pretrained(model_name), tokenizer="sshleifer/distilbart-cnn-12-6")
+        max_chunk_len = 512
         chunks = [text[i:i+max_chunk_len] for i in range(0, len(text), max_chunk_len)]
         summary = ""
         for chunk in chunks:
             summary += summarizer(chunk, max_length=120, min_length=30, do_sample=False)[0]['summary_text'] + " "
         return summary
 
-    # Save summary to file
-    summary = summarizeText(article)
-    with open('summary.txt', 'w') as f:
-        f.write(summary)
 
     # Show summary in streamlit
+    summary = summarizeText(article)
     st.write("Summary:")
     st.write(summary)
 
@@ -48,15 +45,16 @@ def scrapeWikiArticle(url):
 
 # Streamlit UI
 st.title("Wikipedia Article Summarizer")
-url = st.text_input("Enter Wikipedia URL:")
-if url:
-    summary = scrapeWikiArticle(url)
+url_input = st.text_input("Enter Wikipedia URL:", key="url_input")
+if url_input:
+    summary = scrapeWikiArticle(url_input)
     while True:
-        question = st.text_input("Ask a question (type 'quit' to exit):")
-        if question == "quit":
+        question_input = st.text_input("Ask a question (type 'quit' to exit):", key="question_input")
+        if question_input == "quit":
             break
         else:
             question_answerer = pipeline("question-answering", model="deepset/roberta-base-squad2", tokenizer="deepset/roberta-base-squad2")
-            result = question_answerer(question=question, context=summary)
+            result = question_answerer(question=question_input, context=summary)
             st.write("Answer:")
             st.write(result['answer'])
+
